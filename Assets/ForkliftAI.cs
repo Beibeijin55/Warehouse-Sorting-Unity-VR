@@ -14,8 +14,15 @@ public class ForkliftAI : MonoBehaviour
     public float arrivalThreshold = 1f;
     public float waitTimeAtWaypoint = 3f;
 
+    [Header("Delivery Route")]
+    [Tooltip("Drive to the nearest black conveyor belt at the start of the scene.")]
+    public bool driveToConveyor = true;
+    public string conveyorTag = "ConveyerBelt";
+
     private Transform currentTarget;
     private bool isWaiting = false;
+    private bool parkedAtConveyor = false;
+    private bool drivingToConveyor = false;
     private float originalX;
     private float originalZ;
 
@@ -32,9 +39,55 @@ public class ForkliftAI : MonoBehaviour
     {
         originalX = transform.eulerAngles.x;
         originalZ = transform.eulerAngles.z;
-        currentTarget = waypointA;
-        currentState = State.RotateToTarget;
 
+        currentTarget = driveToConveyor ? CreateNearestConveyorTarget() : null;
+        drivingToConveyor = currentTarget != null;
+        if (currentTarget == null)
+        {
+            currentTarget = waypointA;
+        }
+        currentState = State.RotateToTarget;
+    }
+
+    private Transform CreateNearestConveyorTarget()
+    {
+        GameObject[] conveyorObjects;
+        try
+        {
+            conveyorObjects = GameObject.FindGameObjectsWithTag(conveyorTag);
+        }
+        catch (UnityException)
+        {
+            Debug.LogWarning("ForkliftAI: Conveyor tag is missing, using waypoints instead.");
+            return null;
+        }
+
+        Collider nearestCollider = null;
+        Vector3 nearestPoint = Vector3.zero;
+        float nearestDistance = float.MaxValue;
+
+        foreach (GameObject conveyorObject in conveyorObjects)
+        {
+            Collider conveyorCollider = conveyorObject.GetComponent<Collider>();
+            if (conveyorCollider == null) continue;
+
+            Vector3 point = conveyorCollider.ClosestPoint(transform.position);
+            float distance = (point - transform.position).sqrMagnitude;
+            if (distance < nearestDistance)
+            {
+                nearestDistance = distance;
+                nearestPoint = point;
+                nearestCollider = conveyorCollider;
+            }
+        }
+
+        if (nearestCollider == null) return null;
+
+        // Use a temporary target at the closest point on the black conveyor.
+        GameObject target = new GameObject("Forklift Conveyor Delivery Target");
+        nearestPoint.y = transform.position.y;
+        target.transform.position = nearestPoint;
+        return target.transform;
     }
 
     void Update()
@@ -93,7 +146,16 @@ public class ForkliftAI : MonoBehaviour
         float distance = Vector3.Distance(transform.position, currentTarget.position);
         if (distance <= arrivalThreshold)
         {
-            // Arrived at waypoint
+            if (drivingToConveyor && !parkedAtConveyor)
+            {
+                parkedAtConveyor = true;
+                isWaiting = true;
+                currentState = State.WaitAtTarget;
+                Debug.Log("ForkliftAI: Arrived at the conveyor belt.");
+                return;
+            }
+
+            // Arrived at a normal waypoint
             StartCoroutine(WaitAtWaypoint());
         }
     }

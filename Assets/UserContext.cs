@@ -54,12 +54,17 @@ public class UserContext : MonoBehaviour
     private bool prevLeftSecondaryButtonPressed = false;
 
     private int currentTrackIndex = 0;
+    private VRNotificationManager notificationManager;
 
     void Start()
     {
         //Intializes the left and right VR controller (tested on Meta Quest 2).
         rightHandDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
         leftHandDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+
+        // The notification panel is placed in the scene as a separate object.
+        // Find it once so controller input can trigger its VR feedback.
+        notificationManager = FindObjectOfType<VRNotificationManager>();
 
         //Starts playing any background music if set in the editor.
         if (backgroundAudioSource != null && backgroundMusicClips != null && backgroundMusicClips.Count > 0)
@@ -133,6 +138,13 @@ public class UserContext : MonoBehaviour
             {
                 if (primaryButtonDown || secondaryButtonDown)
                 {
+                    if (notificationManager != null)
+                    {
+                        notificationManager.ShowNotification(
+                            "Interaction",
+                            VRNotificationManager.NotificationType.Info);
+                    }
+
                     HandleObjectTag(hit.collider.tag);
                 }
             }
@@ -147,6 +159,13 @@ public class UserContext : MonoBehaviour
                 RaycastHit hit;
                 if (Physics.Raycast(ray, out hit, raycastDistance))
                 {
+                    if (notificationManager != null)
+                    {
+                        notificationManager.ShowNotification(
+                            "Interaction",
+                            VRNotificationManager.NotificationType.Info);
+                    }
+
                     HandleObjectTag(hit.collider.tag);
                 }
             }
