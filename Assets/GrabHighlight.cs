@@ -85,7 +85,7 @@ public class TargetBoxHighlight : MonoBehaviour
     {
         if (collision.collider.CompareTag("ConveyerBelt"))
         {
-            CompleteSorting();
+            TryCompleteSorting();
         }
     }
 
@@ -93,13 +93,13 @@ public class TargetBoxHighlight : MonoBehaviour
     {
         if (other.CompareTag("ConveyerBelt"))
         {
-            CompleteSorting();
+            TryCompleteSorting();
         }
     }
 
-    private void CompleteSorting()
+    public bool TryCompleteSorting()
     {
-        if (isDelivered) return;
+        if (isDelivered) return false;
 
         isDelivered = true;
         isHeld = false;
@@ -116,5 +116,7 @@ public class TargetBoxHighlight : MonoBehaviour
                 "Sorting Successful!",
                 VRNotificationManager.NotificationType.Success);
         }
+
+        return true;
     }
 }

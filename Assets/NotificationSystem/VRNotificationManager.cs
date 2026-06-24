@@ -80,6 +80,29 @@ public class VRNotificationManager : MonoBehaviour
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
         }
+
+        ConfigureConveyorZones();
+    }
+
+    private void ConfigureConveyorZones()
+    {
+        GameObject[] conveyors;
+        try
+        {
+            conveyors = GameObject.FindGameObjectsWithTag("ConveyerBelt");
+        }
+        catch (UnityException)
+        {
+            Debug.LogWarning("[VRNotification] ConveyerBelt tag was not found.");
+            return;
+        }
+
+        foreach (GameObject conveyor in conveyors)
+        {
+            ConveyorSortingZone zone = conveyor.GetComponent<ConveyorSortingZone>();
+            if (zone == null) zone = conveyor.AddComponent<ConveyorSortingZone>();
+            zone.notificationManager = this;
+        }
     }
 
     public void ShowNotification(string message, NotificationType type)
